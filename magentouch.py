@@ -1,22 +1,58 @@
-from suds.client import Client
+from suds.client import Client, log as client_log
+from suds.wsdl import log as wsdl_log
+from suds.transport.http import log as transport_http_log
+from suds.xsd.schema import log as xsd_schema_log
 from suds.transport.http import HttpAuthenticated
 from settings import url, username, password
+from suds.xsd.doctor import ImportDoctor, Import
+import logging
+
 """
-http://www.service-repository.com
+magento soup caller
 """
+
 class Urls:
     pass
 
 class Magentouch:
+    modules = ['client', 'transport_http', 'xsd.schema', 'wsdl']
     def __init__(self, **kwargs):
         if 'url' not in kwargs.keys():
             self.complain(self.parameter_error, 'url')
-
         self.__dict__.update(kwargs)
 
-        t = HttpAuthenticated(username=self.username, password=self.password)
-        self.client = Client(self.url, transport=t)
+        if self.__dict__.get('log'):
+            self.switch_logging()
+        
+        imp = Import('http://schemas.xmlsoap.org/soap/encoding/')
+        imp.filter.add('urn:Magento')
+
+        d = ImportDoctor(imp)
+        self.client = Client(self.url, doctor=d)
         self.service = self.client.service
+
+
+    def login(self, username, password):
+        self.session = self.client.login(username, password)
+        return self.session
+    
+    def switch_logging(self, on=True):
+
+        if on:
+            level = logging.DEBUG
+        else:
+            level = logging.INFO
+
+        logging.basicConfig(level=logging.INFO)
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
+
+        for m in self.modules:
+            logger = eval('{}_log'.format(m.replace('.', '_')))
+            logger.setLevel(logging.DEBUG)
+            logger.addHandler(ch)
 
     def complain(self, func, reason):
         func(reason)
@@ -27,22 +63,18 @@ class Magentouch:
         print 'are: url, [username], [password]'
         raise ValueError()
 
-    def login(self, **kwargs):
-        if kwargs:
-            self.__dict__.update(kwargs)
-        try:
-            self.service.login(self.username, self.password)
-        except KeyError:
-            self.complain(self.parameter_error, 'username, password')
     def get_client(self):
         return self.client
+
+    def get_service(self):
+        return self.service
     
 urls = Urls()
 urls.weather = 'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL'
 urls.magento = 'http://shop.digirocks.com.au/api/?wsdl'
 
-mgt = Magentouch(url=urls.magento, username=username, password=password)
-#mgt.username = 'admin_jacob'
-#mgt.password = "Digirocks123!@#"
+mgt = Magentouch(url=urls.magento)
+
 #print mgt.get_client().service.GetWeatherInformation()
-print mgt.get_client()
+#print mgt.get_client()
+session = mgt.login(username, password)
