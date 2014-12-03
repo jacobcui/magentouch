@@ -35,7 +35,6 @@ class Magentouch:
         print self.client
 
     def login(self, username, password):
-        print username, password
         self.session = self.client.service.login(username, password)
         return self.session
     
@@ -72,18 +71,16 @@ class Magentouch:
     def get_service(self):
         return self.service
 
+    def call(self, resource_name, *args):
+        return self.client.service.call(self.session, resource_name, *args)
+
 if __name__ == '__main__':
     urls = Urls()
-    urls.weather = 'http://wsf.cdyne.com/WeatherWS/Weather.asmx?WSDL'
-    urls.magento = 'http://shop.digirocks.com.au/api/?wsdl'
+    urls.magento = 'http://shop.digirocks.com.au/api/?wsdl'  # soap 1.0
 
     mgt = Magentouch(url=urls.magento)
     client = mgt.get_client()
-    #print mgt.get_client().service.GetWeatherInformation()
-    #print mgt.get_client()
-    #session = mgt.login(username, password)
-    #session = client.service.startSession()
-    session = client.service.login(username, password)
-    print client.service.call(session, 'magento.info')
 
-    #print mgt.print_service()
+    mgt.login(username, password)
+    print mgt.call('magento.info')
+    print mgt.call('catalog_category.tree')
