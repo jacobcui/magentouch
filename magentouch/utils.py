@@ -1,3 +1,5 @@
+from suds.sudsobject import asdict
+
 def recursive_asdict(d):
     """Convert Suds object into serializable format."""
     out = {}
