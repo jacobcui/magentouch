@@ -9,6 +9,7 @@ http://www.magentocommerce.com/api/soap/introduction.html
 from magentouch import Magentouch
 from magentouch.utils import recursive_asdict
 
+# e.g. url='http://shop.digirocks.com.au/api/v2_soap?wsdl=1'
 url=''
 username=''
 password=''
